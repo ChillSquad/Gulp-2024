@@ -38,17 +38,15 @@ function scripts() {
     .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
 }
 
-// Инициализация сервера BrowserSync и установка базового каталога
-function browsersync() {
+// Наблюдение за изменениями в файлах и выполнение соответствующих задач
+function watcher() {
+  // Инициализация сервера BrowserSync и установка базового каталога
   browserSync.init({
     server: {
       baseDir: paths.baseDir,
     },
   });
-}
 
-// Наблюдение за изменениями в файлах и выполнение соответствующих задач
-function watcher() {
   watch([paths.scss], styles); // Отслеживание SCSS-файлов
   watch([paths.js], scripts); // Отслеживание JavaScript-файлов
   watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Отслеживание HTML-файлов
@@ -79,7 +77,6 @@ function building() {
 // Экспорт задач для выполнения из командной строки
 exports.styles = styles;
 exports.scripts = scripts;
-exports.browsersync = browsersync;
 exports.watcher = watcher;
 exports.cleanDist = cleanDist;
 exports.copyHtml = copyHtml;
@@ -88,4 +85,4 @@ exports.copyHtml = copyHtml;
 exports.build = series(cleanDist, building, copyHtml);
 
 // Задача по умолчанию для разработки: компиляция ресурсов, запуск сервера, отслеживание файлов
-exports.default = parallel(styles, scripts, browsersync, watcher);
+exports.default = parallel(styles, scripts, watcher);
