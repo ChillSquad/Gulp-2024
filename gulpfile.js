@@ -1,66 +1,91 @@
+// Импорт необходимых функций и плагинов Gulp
 const { src, dest, watch, parallel, series } = require("gulp");
 
-const scss = require("gulp-sass")(require("sass"));
-const concat = require("gulp-concat");
-const uglify = require("gulp-uglify-es").default;
-const browserSync = require("browser-sync").create();
-const autoprefixer = require("gulp-autoprefixer");
-const clean = require("gulp-clean");
+const scss = require("gulp-sass")(require("sass")); // Компиляция SCSS в CSS
+const concat = require("gulp-concat"); // Объединение файлов
+const uglify = require("gulp-uglify-es").default; // Минификация JS-файлов
+const browserSync = require("browser-sync").create(); // Автоперезагрузка браузера
+const autoprefixer = require("gulp-autoprefixer"); // Добавление CSS-префиксов
+const clean = require("gulp-clean"); // Удаление файлов/папок
 
+// Определение путей для исходных и выходных файлов
 const paths = {
+  scss: "app/scss/style.scss",
+  js: "app/js/main.js",
+  cssDest: "app/css",
+  jsDest: "app/js",
   html: "app/index.html",
+  baseDir: "app/",
   dist: "dist",
 };
 
+// Компиляция, добавление префиксов, минификация SCSS и сохранение в выходной каталог
 function styles() {
-  return src("app/scss/style.scss")
-    .pipe(autoprefixer({ overrideBrowserslist: ["last 10 version"] }))
-    .pipe(concat("style.min.css"))
+  return src(paths.scss)
+    .pipe(autoprefixer({ overrideBrowserslist: ["last 10 versions"] }))
     .pipe(scss({ outputStyle: "compressed" }))
-    .pipe(dest("app/css"))
-    .pipe(browserSync.stream());
+    .pipe(concat("style.min.css"))
+    .pipe(dest(paths.cssDest))
+    .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
 }
 
+// Объединение, минификация JavaScript и сохранение в выходной каталог
 function scripts() {
-  return src("app/js/main.js")
+  return src(paths.js)
     .pipe(concat("main.min.js"))
     .pipe(uglify())
-    .pipe(dest("app/js"))
-    .pipe(browserSync.stream());
+    .pipe(dest(paths.jsDest))
+    .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
 }
 
+// Инициализация сервера BrowserSync и установка базового каталога
 function browsersync() {
   browserSync.init({
     server: {
-      baseDir: "app/",
+      baseDir: paths.baseDir,
     },
   });
 }
 
+// Наблюдение за изменениями в файлах и выполнение соответствующих задач
 function watcher() {
-  watch(["app/scss/style.scss"], styles);
-  watch(["app/js/main.js"], scripts);
-  watch(["app/*.html"]).on("change", browserSync.reload);
+  watch([paths.scss], styles); // Отслеживание SCSS-файлов
+  watch([paths.js], scripts); // Отслеживание JavaScript-файлов
+  watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Отслеживание HTML-файлов
 }
 
+// Очистка папки с дистрибутивом перед сборкой
 function cleanDist() {
   return src(paths.dist, { allowEmpty: true, read: false }).pipe(clean());
 }
 
+// Копирование HTML-файлов в папку с дистрибутивом
 function copyHtml() {
   return src(paths.html).pipe(dest(paths.dist));
 }
 
+// Задача сборки для компиляции и перемещения файлов в папку с дистрибутивом
 function building() {
-  return src(["app/css/style.min.css", "app/js/main.min.js", "app/**/*.html"], {
-    base: "app",
-  }).pipe(dest("dist"));
+  return src(
+    [
+      `${paths.cssDest}/style.min.css`,
+      `${paths.jsDest}/main.min.js`,
+      `${paths.baseDir}**/*.html`,
+    ],
+    { base: paths.baseDir }
+  ).pipe(dest(paths.dist));
 }
 
+// Экспорт задач для выполнения из командной строки
 exports.styles = styles;
 exports.scripts = scripts;
 exports.browsersync = browsersync;
 exports.watcher = watcher;
+exports.cleanDist = cleanDist;
+exports.copyHtml = copyHtml;
 
+// Основная задача сборки: очистка папки dist, сборка файлов, копирование HTML
 exports.build = series(cleanDist, building, copyHtml);
+
+// Задача по умолчанию для разработки: компиляция ресурсов, запуск сервера, отслеживание файлов
 exports.default = parallel(styles, scripts, browsersync, watcher);
