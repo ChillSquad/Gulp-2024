@@ -11,10 +11,14 @@
   "devDependencies": {
     "browser-sync": "^3.0.2",
     "gulp": "^5.0.0",
+    "gulp-avif": "^1.1.1",
+    "gulp-cached": "^1.1.1",
     "gulp-clean": "^0.4.0",
     "gulp-concat": "^2.6.1",
+    "gulp-imagemin": "^7.1.0",
     "gulp-sass": "^5.1.0",
     "gulp-uglify-es": "^3.0.0",
+    "gulp-webp": "^4.0.1",
     "sass": "^1.77.4"
   },
   "dependencies": {
