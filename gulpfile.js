@@ -10,7 +10,7 @@ const avif = require("gulp-avif");
 const webp = require("gulp-webp");
 const imagemin = require("gulp-imagemin");
 const newer = require("gulp-newer");
-// const svgSprite = require("gulp-svg-sprite");
+const svgSprite = require("gulp-svg-sprite");
 
 // Определение путей для исходных и выходных файлов
 const paths = {
@@ -30,10 +30,6 @@ const paths = {
     dest: "app/img/dist",
   },
 };
-
-// function sprite() {
-//   return src("app/img/dist/*.svg");
-// }
 
 // Компиляция, добавление префиксов, минификация SCSS и сохранение в выходной каталог
 function styles() {
@@ -64,6 +60,21 @@ function images() {
     .pipe(src(`${paths.images.src}/*.*`))
     .pipe(newer(paths.images.dest))
     .pipe(imagemin())
+    .pipe(dest(paths.images.dest));
+}
+
+function sprite() {
+  return src(`${paths.images.dest}/*.svg`)
+    .pipe(
+      svgSprite({
+        mode: {
+          stack: {
+            sprite: "../sprite.svg",
+            example: true,
+          },
+        },
+      })
+    )
     .pipe(dest(paths.images.dest));
 }
 
