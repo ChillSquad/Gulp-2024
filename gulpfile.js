@@ -7,25 +7,52 @@ const uglify = require("gulp-uglify-es").default; // Минификация JS-�
 const browserSync = require("browser-sync").create(); // Автоперезагрузка браузера
 const autoprefixer = require("gulp-autoprefixer"); // Добавление CSS-префиксов
 const clean = require("gulp-clean"); // Удаление файлов/папок
+const avif = require("gulp-avif");
+const webp = require("gulp-webp");
+const imagemin = require("gulp-imagemin");
+const cached = require("gulp-cached");
+const newer = require("gulp-newer");
 
 // Определение путей для исходных и выходных файлов
 const paths = {
-  scss: "app/scss/style.scss",
-  js: "app/js/main.js",
-  cssDest: "app/css",
-  jsDest: "app/js",
-  html: "app/index.html",
-  baseDir: "app/",
   dist: "dist",
+  baseDir: "app/",
+  html: "app/index.html",
+  styles: {
+    scss: "app/scss/style.scss",
+    cssDest: "app/css",
+  },
+  scripts: {
+    js: "app/js/main.js",
+    jsDest: "app/js",
+  },
+  images: {
+    src: "app/img/src/*.*",
+    dest: "app/img/dist",
+  },
 };
+
+function images() {
+  return src([paths.images.src, "!app/img/src/*.svg"])
+    .pipe(newer(paths.images.dest))
+
+    .pipe(avif({ quality: 50 }))
+    .pipe(src(paths.images.src))
+
+    .pipe(webp())
+    .pipe(src(paths.images.src))
+
+    .pipe(imagemin())
+    .pipe(dest(paths.images.dest));
+}
 
 // Компиляция, добавление префиксов, минификация SCSS и сохранение в выходной каталог
 function styles() {
-  return src(paths.scss)
+  return src(paths.styles.scss)
     .pipe(autoprefixer({ overrideBrowserslist: ["last 10 versions"] }))
     .pipe(scss({ outputStyle: "compressed" }))
     .pipe(concat("style.min.css"))
-    .pipe(dest(paths.cssDest))
+    .pipe(dest(paths.styles.cssDest))
     .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
 }
 
@@ -47,7 +74,7 @@ function watcher() {
     },
   });
 
-  watch([paths.scss], styles); // Отслеживание SCSS-файлов
+  watch([paths.styles.scss], styles); // Отслеживание SCSS-файлов
   watch([paths.js], scripts); // Отслеживание JavaScript-файлов
   watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Отслеживание HTML-файлов
 }
@@ -66,7 +93,7 @@ function copyHtml() {
 function building() {
   return src(
     [
-      `${paths.cssDest}/style.min.css`,
+      `${paths.styles.cssDest}/style.min.css`,
       `${paths.jsDest}/main.min.js`,
       `${paths.baseDir}**/*.html`,
     ],
@@ -75,6 +102,7 @@ function building() {
 }
 
 // Экспорт задач для выполнения из командной строки
+exports.images = images;
 exports.styles = styles;
 exports.scripts = scripts;
 exports.watcher = watcher;
@@ -82,7 +110,7 @@ exports.cleanDist = cleanDist;
 exports.copyHtml = copyHtml;
 
 // Основная задача сборки: очистка папки dist, сборка файлов, копирование HTML
-exports.build = series(cleanDist, building, copyHtml);
+exports.build = series(cleanDist, images, building, copyHtml);
 
 // Задача по умолчанию для разработки: компиляция ресурсов, запуск сервера, отслеживание файлов
 exports.default = parallel(styles, scripts, watcher);
