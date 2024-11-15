@@ -6,139 +6,143 @@ const uglify = require("gulp-uglify-es").default; // Минификация JS-�
 const browserSync = require("browser-sync").create(); // Автоперезагрузка браузера
 const autoprefixer = require("gulp-autoprefixer"); // Добавление CSS-префиксов
 const clean = require("gulp-clean"); // Удаление файлов/папок
-const avif = require("gulp-avif");
-const webp = require("gulp-webp");
-const imagemin = require("gulp-imagemin");
-const newer = require("gulp-newer");
-const svgSprite = require("gulp-svg-sprite");
-const fonter = require("gulp-fonter");
-const ttf2woff2 = require("gulp-ttf2woff2");
+const avif = require("gulp-avif"); // Конвертация изображений в формат AVIF
+const webp = require("gulp-webp"); // Конвертация изображений в формат WebP
+const imagemin = require("gulp-imagemin"); // Оптимизация изображений
+const newer = require("gulp-newer"); // Обработка только новых файлов
+const svgSprite = require("gulp-svg-sprite"); // Создание SVG-спрайтов
+const fonter = require("gulp-fonter"); // Конвертация шрифтов в разные форматы
+const ttf2woff2 = require("gulp-ttf2woff2"); // Конвертация шрифтов TTF в WOFF2
 
 // Определение путей для исходных и выходных файлов
 const paths = {
-  dist: "dist",
-  baseDir: "app/",
-  html: "app/index.html",
+  dist: "dist", // Папка для итоговой сборки
+  baseDir: "app/", // Базовая директория проекта
+  html: "app/index.html", // Путь к основному HTML-файлу
   styles: {
-    scss: "app/scss/style.scss",
-    dest: "app/css",
+    scss: "app/scss/style.scss", // Основной SCSS-файл
+    dest: "app/css", // Папка для скомпилированных CSS
   },
   scripts: {
-    js: "app/js/main.js",
-    dest: "app/js",
+    js: "app/js/main.js", // Основной JavaScript-файл
+    dest: "app/js", // Папка для минифицированных JS-файлов
   },
   images: {
-    src: "app/img/src",
-    dest: "app/img/dist",
+    src: "app/img/src", // Исходные изображения
+    dest: "app/img/dist", // Папка для оптимизированных изображений
   },
   fonts: {
-    src: "app/fonts/src",
-    dest: "app/fonts/dist",
+    src: "app/fonts/src", // Исходные шрифты
+    dest: "app/fonts/dist", // Папка для сконвертированных шрифтов
   },
 };
 
+// Конвертация шрифтов в TTF, WOFF, WOFF2
 function fonts() {
-  return src(`${paths.fonts.src}/*.*`)
+  return src(`${paths.fonts.src}/*.*`) // Берем исходные шрифты
     .pipe(
       fonter({
-        formats: ["woff", "ttf"],
+        formats: ["woff", "ttf"], // Конвертация в WOFF и TTF
       })
     )
-    .pipe(src(`${paths.fonts.dest}/*.ttf`))
-    .pipe(ttf2woff2())
-    .pipe(dest(paths.fonts.dest));
+    .pipe(src(`${paths.fonts.dest}/*.ttf`)) // Получаем сгенерированные TTF
+    .pipe(ttf2woff2()) // Конвертация TTF в WOFF2
+    .pipe(dest(paths.fonts.dest)); // Сохраняем в папку назначения
 }
 
-// Компиляция, добавление префиксов, минификация SCSS и сохранение в выходной каталог
+// Компиляция SCSS, добавление префиксов, минификация и сохранение в выходной каталог
 function styles() {
   return src(paths.styles.scss)
-    .pipe(autoprefixer({ overrideBrowserslist: ["last 10 versions"] }))
-    .pipe(scss({ outputStyle: "compressed" }))
-    .pipe(concat("style.min.css"))
-    .pipe(dest(paths.styles.dest))
-    .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
+    .pipe(autoprefixer({ overrideBrowserslist: ["last 10 versions"] })) // Добавляем префиксы
+    .pipe(scss({ outputStyle: "compressed" })) // Компилируем SCSS в минифицированный CSS
+    .pipe(concat("style.min.css")) // Объединяем в один файл
+    .pipe(dest(paths.styles.dest)) // Сохраняем в папку назначения
+    .pipe(browserSync.stream()); // Внесение изменений без перезагрузки страницы
 }
 
 // Объединение, минификация JavaScript и сохранение в выходной каталог
 function scripts() {
   return src(paths.scripts.js)
-    .pipe(concat("main.min.js"))
-    .pipe(uglify())
-    .pipe(dest(paths.scripts.dest))
-    .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
+    .pipe(concat("main.min.js")) // Объединяем в один файл
+    .pipe(uglify()) // Минифицируем
+    .pipe(dest(paths.scripts.dest)) // Сохраняем в папку назначения
+    .pipe(browserSync.stream()); // Внесение изменений без перезагрузки страницы
 }
 
+// Оптимизация изображений и конвертация в AVIF и WebP
 function images() {
-  return src([`${paths.images.src}/*.*`, "!app/img/src/*.svg"])
-    .pipe(newer(paths.images.dest))
-    .pipe(avif({ quality: 50 }))
-    .pipe(src(`${paths.images.src}/*.*`))
-    .pipe(newer(paths.images.dest))
-    .pipe(webp())
-    .pipe(src(`${paths.images.src}/*.*`))
-    .pipe(newer(paths.images.dest))
-    .pipe(imagemin())
-    .pipe(dest(paths.images.dest));
+  return src([`${paths.images.src}/*.*`, "!app/img/src/*.svg"]) // Берем изображения, исключая SVG
+    .pipe(newer(paths.images.dest)) // Пропускаем только новые файлы
+    .pipe(avif({ quality: 50 })) // Конвертируем в AVIF
+    .pipe(src(`${paths.images.src}/*.*`)) // Возвращаемся к исходным изображениям
+    .pipe(newer(paths.images.dest)) // Пропускаем только новые файлы
+    .pipe(webp()) // Конвертируем в WebP
+    .pipe(src(`${paths.images.src}/*.*`)) // Возвращаемся к исходным изображениям
+    .pipe(newer(paths.images.dest)) // Пропускаем только новые файлы
+    .pipe(imagemin()) // Оптимизируем изображения
+    .pipe(dest(paths.images.dest)); // Сохраняем в папку назначения
 }
 
+// Создание SVG-спрайта
 function sprite() {
-  return src(`${paths.images.dest}/*.svg`)
+  return src(`${paths.images.dest}/*.svg`) // Берем все SVG из папки назначения
     .pipe(
       svgSprite({
         mode: {
           stack: {
-            sprite: "../sprite.svg",
-            example: true,
+            sprite: "../sprite.svg", // Итоговый файл спрайта
+            example: true, // Включаем пример
           },
         },
       })
     )
-    .pipe(dest(paths.images.dest));
+    .pipe(dest(paths.images.dest)); // Сохраняем спрайт в папку назначения
 }
 
-// Наблюдение за изменениями в файлах и выполнение соответствующих задач
+// Наблюдение за изменениями в файлах
 function watcher() {
-  // Инициализация сервера BrowserSync и установка базового каталога
   browserSync.init({
     server: {
-      baseDir: paths.baseDir,
+      baseDir: paths.baseDir, // Базовая директория для сервера
     },
   });
 
-  watch([paths.styles.scss], styles); // Отслеживание SCSS-файлов
-  watch([paths.fonts.src], fonts); // Отслеживание шрифтов
-  watch([paths.images.src], images); // Отслеживание изображений
-  watch([paths.scripts.js], scripts); // Отслеживание JavaScript-файлов
-  watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Отслеживание HTML-файлов
+  watch([paths.styles.scss], styles); // Отслеживаем изменения SCSS-файлов
+  watch([paths.fonts.src], fonts); // Отслеживаем изменения шрифтов
+  watch([paths.images.src], images); // Отслеживаем изменения изображений
+  watch([paths.scripts.js], scripts); // Отслеживаем изменения JavaScript
+  watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Перезагружаем браузер при изменении HTML
 }
 
-// Очистка папки с дистрибутивом перед сборкой
+// Очистка папки с дистрибутивом
 function cleanDist() {
-  return src(paths.dist, { allowEmpty: true, read: false }).pipe(clean());
+  return src(paths.dist, { allowEmpty: true, read: false }) // Берем папку с дистрибутивом
+    .pipe(clean()); // Удаляем содержимое
 }
 
-// Копирование HTML-файлов в папку с дистрибутивом
+// Копирование HTML-файлов в папку дистрибутива
 function copyHtml() {
-  return src(paths.html).pipe(dest(paths.dist));
+  return src(paths.html) // Берем HTML-файл
+    .pipe(dest(paths.dist)); // Копируем в папку назначения
 }
 
-// Задача сборки для компиляции и перемещения файлов в папку с дистрибутивом
+// Сборка проекта
 function building() {
   return src(
     [
-      `${paths.images.dest}/*.*`,
-      `!${paths.images.dest}/*.svg`,
-      `${paths.images.dest}/sprite.svg`,
-      `${paths.fonts.dest}/*.*`,
-      `${paths.styles.dest}/style.min.css`,
-      `${paths.scripts.dest}/main.min.js`,
-      `${paths.baseDir}**/*.html`,
+      `${paths.images.dest}/*.*`, // Оптимизированные изображения
+      `!${paths.images.dest}/*.svg`, // Исключаем отдельные SVG
+      `${paths.images.dest}/sprite.svg`, // Добавляем SVG-спрайт
+      `${paths.fonts.dest}/*.*`, // Конвертированные шрифты
+      `${paths.styles.dest}/style.min.css`, // Минифицированный CSS
+      `${paths.scripts.dest}/main.min.js`, // Минифицированный JavaScript
+      `${paths.baseDir}**/*.html`, // HTML-файлы
     ],
-    { base: paths.baseDir }
-  ).pipe(dest(paths.dist));
+    { base: paths.baseDir } // Сохраняем структуру папок
+  ).pipe(dest(paths.dist)); // Сохраняем в папку дистрибутива
 }
 
-// Экспорт задач для выполнения из командной строки
+// Экспортируем задачи для командной строки
 exports.styles = styles;
 exports.building = building;
 exports.scripts = scripts;
@@ -149,8 +153,8 @@ exports.watcher = watcher;
 exports.cleanDist = cleanDist;
 exports.copyHtml = copyHtml;
 
-// Основная задача сборки: очистка папки dist, сборка файлов, копирование HTML
+// Основная задача сборки
 exports.build = series(cleanDist, copyHtml, building);
 
-// Задача по умолчанию для разработки: компиляция ресурсов, запуск сервера, отслеживание файлов
+// Задача по умолчанию для разработки
 exports.default = parallel(styles, images, fonts, scripts, watcher);
