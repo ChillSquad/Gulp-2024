@@ -10,6 +10,7 @@ const avif = require("gulp-avif");
 const webp = require("gulp-webp");
 const imagemin = require("gulp-imagemin");
 const newer = require("gulp-newer");
+// const svgSprite = require("gulp-svg-sprite");
 
 // Определение путей для исходных и выходных файлов
 const paths = {
@@ -25,27 +26,14 @@ const paths = {
     dest: "app/js",
   },
   images: {
-    base: "app/img/src",
-    src: "app/img/src/*.*",
+    src: "app/img/src",
     dest: "app/img/dist",
   },
 };
 
-function images() {
-  return src([paths.images.src, "!app/img/src/*.svg"])
-    .pipe(newer(paths.images.dest))
-    .pipe(avif({ quality: 50 }))
-    .pipe(src(paths.images.src))
-
-    .pipe(newer(paths.images.dest))
-    .pipe(webp())
-    .pipe(src(paths.images.src))
-
-    .pipe(newer(paths.images.dest))
-    .pipe(imagemin())
-
-    .pipe(dest(paths.images.dest));
-}
+// function sprite() {
+//   return src("app/img/dist/*.svg");
+// }
 
 // Компиляция, добавление префиксов, минификация SCSS и сохранение в выходной каталог
 function styles() {
@@ -66,6 +54,19 @@ function scripts() {
     .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
 }
 
+function images() {
+  return src([`${paths.images.src}/*.*`, "!app/img/src/*.svg"])
+    .pipe(newer(paths.images.dest))
+    .pipe(avif({ quality: 50 }))
+    .pipe(src(`${paths.images.src}/*.*`))
+    .pipe(newer(paths.images.dest))
+    .pipe(webp())
+    .pipe(src(`${paths.images.src}/*.*`))
+    .pipe(newer(paths.images.dest))
+    .pipe(imagemin())
+    .pipe(dest(paths.images.dest));
+}
+
 // Наблюдение за изменениями в файлах и выполнение соответствующих задач
 function watcher() {
   // Инициализация сервера BrowserSync и установка базового каталога
@@ -76,7 +77,7 @@ function watcher() {
   });
 
   watch([paths.styles.scss], styles); // Отслеживание SCSS-файлов
-  watch([paths.images.base], images); // Отслеживание изображений
+  watch([paths.images.src], images); // Отслеживание изображений
   watch([paths.scripts.js], scripts); // Отслеживание JavaScript-файлов
   watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Отслеживание HTML-файлов
 }
@@ -105,9 +106,10 @@ function building() {
 }
 
 // Экспорт задач для выполнения из командной строки
-exports.images = images;
 exports.styles = styles;
 exports.scripts = scripts;
+exports.images = images;
+exports.sprite = sprite;
 exports.watcher = watcher;
 exports.cleanDist = cleanDist;
 exports.copyHtml = copyHtml;
