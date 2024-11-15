@@ -96,6 +96,7 @@ function building() {
   return src(
     [
       `${paths.styles.dest}/style.min.css`,
+      `${paths.images.dest}/*.*`,
       `${paths.scripts.dest}/main.min.js`,
       `${paths.baseDir}**/*.html`,
     ],
