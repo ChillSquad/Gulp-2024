@@ -13,12 +13,17 @@ const newer = require("gulp-newer"); // Обработка только новы
 const svgSprite = require("gulp-svg-sprite"); // Создание SVG-спрайтов
 const fonter = require("gulp-fonter"); // Конвертация шрифтов в разные форматы
 const ttf2woff2 = require("gulp-ttf2woff2"); // Конвертация шрифтов TTF в WOFF2
+const pug = require("gulp-pug"); // Шаблонизатор HTML PUG
 
 // Определение путей для исходных и выходных файлов
 const paths = {
+  baseDir: "app", // Базовая директория проекта
   dist: "dist", // Папка для итоговой сборки
-  baseDir: "app/", // Базовая директория проекта
-  html: "app/index.html", // Путь к основному HTML-файлу
+  html: "app/*.html", // Путь к основному HTML-файлу
+  pug: {
+    src: "app/pug/src",
+    dest: "app/pug/dist",
+  },
   styles: {
     scss: "app/scss/style.scss", // Основной SCSS-файл
     dest: "app/css", // Папка для скомпилированных CSS
@@ -36,6 +41,11 @@ const paths = {
     dest: "app/fonts/dist", // Папка для сконвертированных шрифтов
   },
 };
+
+// Шаблонизатор HTML PUG
+function template() {
+  return src(`${paths.pug.src}/*.pug`).pipe(pug()).pipe(dest(paths.pug.dest));
+}
 
 // Конвертация шрифтов в TTF, WOFF, WOFF2
 function fonts() {
@@ -107,11 +117,12 @@ function watcher() {
     },
   });
 
+  watch([paths.pug.src], template); // Отслеживаем изменения pug-файлов
   watch([paths.styles.scss], styles); // Отслеживаем изменения SCSS-файлов
   watch([paths.fonts.src], fonts); // Отслеживаем изменения шрифтов
   watch([paths.images.src], images); // Отслеживаем изменения изображений
   watch([paths.scripts.js], scripts); // Отслеживаем изменения JavaScript
-  watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Перезагружаем браузер при изменении HTML
+  watch([`${paths.baseDir}/*.html`]).on("change", browserSync.reload); // Перезагружаем браузер при изменении HTML
 }
 
 // Очистка папки с дистрибутивом
@@ -133,16 +144,19 @@ function building() {
       `${paths.images.dest}/*.*`, // Оптимизированные изображения
       `!${paths.images.dest}/*.svg`, // Исключаем отдельные SVG
       `${paths.images.dest}/sprite.svg`, // Добавляем SVG-спрайт
+
+      `${paths.pug.dest}/*.pug`, // Конвертированные шрифты
       `${paths.fonts.dest}/*.*`, // Конвертированные шрифты
       `${paths.styles.dest}/style.min.css`, // Минифицированный CSS
       `${paths.scripts.dest}/main.min.js`, // Минифицированный JavaScript
-      `${paths.baseDir}**/*.html`, // HTML-файлы
+      `${paths.baseDir}/**/*.html`, // HTML-файлы
     ],
     { base: paths.baseDir } // Сохраняем структуру папок
   ).pipe(dest(paths.dist)); // Сохраняем в папку дистрибутива
 }
 
 // Экспортируем задачи для командной строки
+exports.template = template;
 exports.styles = styles;
 exports.building = building;
 exports.scripts = scripts;
@@ -157,4 +171,4 @@ exports.copyHtml = copyHtml;
 exports.build = series(cleanDist, copyHtml, building);
 
 // Задача по умолчанию для разработки
-exports.default = parallel(styles, images, fonts, scripts, watcher);
+exports.default = parallel(template, styles, images, fonts, scripts, watcher);

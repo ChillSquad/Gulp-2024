@@ -17,6 +17,7 @@
     "gulp-fonter": "^0.3.0",
     "gulp-imagemin": "^7.1.0",
     "gulp-newer": "^1.4.0",
+    "gulp-pug": "^5.0.0",
     "gulp-sass": "^5.1.0",
     "gulp-svg-sprite": "^2.0.3",
     "gulp-ttf2woff2": "^4.0.1",
