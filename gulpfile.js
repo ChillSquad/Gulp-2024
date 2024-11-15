@@ -1,4 +1,3 @@
-// Импорт необходимых функций и плагинов Gulp
 const { src, dest, watch, parallel, series } = require("gulp");
 
 const scss = require("gulp-sass")(require("sass")); // Компиляция SCSS в CSS
@@ -10,7 +9,6 @@ const clean = require("gulp-clean"); // Удаление файлов/папок
 const avif = require("gulp-avif");
 const webp = require("gulp-webp");
 const imagemin = require("gulp-imagemin");
-const cached = require("gulp-cached");
 const newer = require("gulp-newer");
 
 // Определение путей для исходных и выходных файлов
@@ -20,13 +18,14 @@ const paths = {
   html: "app/index.html",
   styles: {
     scss: "app/scss/style.scss",
-    cssDest: "app/css",
+    dest: "app/css",
   },
   scripts: {
     js: "app/js/main.js",
-    jsDest: "app/js",
+    dest: "app/js",
   },
   images: {
+    base: "app/img/src",
     src: "app/img/src/*.*",
     dest: "app/img/dist",
   },
@@ -35,14 +34,16 @@ const paths = {
 function images() {
   return src([paths.images.src, "!app/img/src/*.svg"])
     .pipe(newer(paths.images.dest))
-
     .pipe(avif({ quality: 50 }))
     .pipe(src(paths.images.src))
 
+    .pipe(newer(paths.images.dest))
     .pipe(webp())
     .pipe(src(paths.images.src))
 
+    .pipe(newer(paths.images.dest))
     .pipe(imagemin())
+
     .pipe(dest(paths.images.dest));
 }
 
@@ -52,16 +53,16 @@ function styles() {
     .pipe(autoprefixer({ overrideBrowserslist: ["last 10 versions"] }))
     .pipe(scss({ outputStyle: "compressed" }))
     .pipe(concat("style.min.css"))
-    .pipe(dest(paths.styles.cssDest))
+    .pipe(dest(paths.styles.dest))
     .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
 }
 
 // Объединение, минификация JavaScript и сохранение в выходной каталог
 function scripts() {
-  return src(paths.js)
+  return src(paths.scripts.js)
     .pipe(concat("main.min.js"))
     .pipe(uglify())
-    .pipe(dest(paths.jsDest))
+    .pipe(dest(paths.scripts.dest))
     .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
 }
 
@@ -75,7 +76,8 @@ function watcher() {
   });
 
   watch([paths.styles.scss], styles); // Отслеживание SCSS-файлов
-  watch([paths.js], scripts); // Отслеживание JavaScript-файлов
+  watch([paths.images.base], images); // Отслеживание изображений
+  watch([paths.scripts.js], scripts); // Отслеживание JavaScript-файлов
   watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Отслеживание HTML-файлов
 }
 
@@ -93,8 +95,8 @@ function copyHtml() {
 function building() {
   return src(
     [
-      `${paths.styles.cssDest}/style.min.css`,
-      `${paths.jsDest}/main.min.js`,
+      `${paths.styles.dest}/style.min.css`,
+      `${paths.scripts.dest}/main.min.js`,
       `${paths.baseDir}**/*.html`,
     ],
     { base: paths.baseDir }
