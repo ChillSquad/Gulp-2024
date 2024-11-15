@@ -14,6 +14,8 @@ const svgSprite = require("gulp-svg-sprite"); // Создание SVG-спрай
 const fonter = require("gulp-fonter"); // Конвертация шрифтов в разные форматы
 const ttf2woff2 = require("gulp-ttf2woff2"); // Конвертация шрифтов TTF в WOFF2
 const pug = require("gulp-pug"); // Шаблонизатор HTML PUG
+const gulpIf = require("gulp-if"); // Для условной обработки
+const fs = require("fs"); // Модуль для работы с файловой системой
 
 // Определение путей для исходных и выходных файлов
 const paths = {
@@ -139,19 +141,21 @@ function copyHtml() {
 
 // Сборка проекта
 function building() {
-  return src(
-    [
-      `${paths.images.dest}/*.*`, // Оптимизированные изображения
-      `!${paths.images.dest}/*.svg`, // Исключаем отдельные SVG
-      `${paths.images.dest}/sprite.svg`, // Добавляем SVG-спрайт
+  const pathsToInclude = [
+    `${paths.images.dest}/*.*`, // Оптимизированные изображения
+    `!${paths.images.dest}/*.svg`, // Исключаем отдельные SVG
+    `${paths.fonts.dest}/*.*`, // Конвертированные шрифты
+    `${paths.styles.dest}/style.min.css`, // Минифицированный CSS
+    `${paths.scripts.dest}/main.min.js`, // Минифицированный JavaScript
+    `${paths.baseDir}/**/*.html`, // HTML-файлы
+  ];
 
-      `${paths.fonts.dest}/*.*`, // Конвертированные шрифты
-      `${paths.styles.dest}/style.min.css`, // Минифицированный CSS
-      `${paths.scripts.dest}/main.min.js`, // Минифицированный JavaScript
-      `${paths.baseDir}/**/*.html`, // HTML-файлы
-    ],
-    { base: paths.baseDir } // Сохраняем структуру папок
-  ).pipe(dest(paths.dist)); // Сохраняем в папку дистрибутива
+  // Добавляем sprite.svg только если он существует
+  if (fs.existsSync(`${paths.images.dest}/sprite.svg`)) {
+    pathsToInclude.push(`${paths.images.dest}/sprite.svg`);
+  }
+
+  return src(pathsToInclude, { base: paths.baseDir }).pipe(dest(paths.dist)); // Сохраняем в папку дистрибутива
 }
 
 // Экспортируем задачи для командной строки
