@@ -1,4 +1,3 @@
-// Импорт необходимых функций и плагинов Gulp
 const { src, dest, watch, parallel, series } = require("gulp");
 
 const scss = require("gulp-sass")(require("sass")); // Компиляция SCSS в CSS
@@ -7,35 +6,94 @@ const uglify = require("gulp-uglify-es").default; // Минификация JS-�
 const browserSync = require("browser-sync").create(); // Автоперезагрузка браузера
 const autoprefixer = require("gulp-autoprefixer"); // Добавление CSS-префиксов
 const clean = require("gulp-clean"); // Удаление файлов/папок
+const avif = require("gulp-avif");
+const webp = require("gulp-webp");
+const imagemin = require("gulp-imagemin");
+const newer = require("gulp-newer");
+const svgSprite = require("gulp-svg-sprite");
+const fonter = require("gulp-fonter");
+const ttf2woff2 = require("gulp-ttf2woff2");
 
 // Определение путей для исходных и выходных файлов
 const paths = {
-  scss: "app/scss/style.scss",
-  js: "app/js/main.js",
-  cssDest: "app/css",
-  jsDest: "app/js",
-  html: "app/index.html",
-  baseDir: "app/",
   dist: "dist",
+  baseDir: "app/",
+  html: "app/index.html",
+  styles: {
+    scss: "app/scss/style.scss",
+    dest: "app/css",
+  },
+  scripts: {
+    js: "app/js/main.js",
+    dest: "app/js",
+  },
+  images: {
+    src: "app/img/src",
+    dest: "app/img/dist",
+  },
+  fonts: {
+    src: "app/fonts/src",
+    dest: "app/fonts/dist",
+  },
 };
+
+function fonts() {
+  return src(`${paths.fonts.src}/*.*`)
+    .pipe(
+      fonter({
+        formats: ["woff", "ttf"],
+      })
+    )
+    .pipe(src(`${paths.fonts.dest}/*.ttf`))
+    .pipe(ttf2woff2())
+    .pipe(dest(paths.fonts.dest));
+}
 
 // Компиляция, добавление префиксов, минификация SCSS и сохранение в выходной каталог
 function styles() {
-  return src(paths.scss)
+  return src(paths.styles.scss)
     .pipe(autoprefixer({ overrideBrowserslist: ["last 10 versions"] }))
     .pipe(scss({ outputStyle: "compressed" }))
     .pipe(concat("style.min.css"))
-    .pipe(dest(paths.cssDest))
+    .pipe(dest(paths.styles.dest))
     .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
 }
 
 // Объединение, минификация JavaScript и сохранение в выходной каталог
 function scripts() {
-  return src(paths.js)
+  return src(paths.scripts.js)
     .pipe(concat("main.min.js"))
     .pipe(uglify())
-    .pipe(dest(paths.jsDest))
+    .pipe(dest(paths.scripts.dest))
     .pipe(browserSync.stream()); // Внесение изменений без перезагрузки
+}
+
+function images() {
+  return src([`${paths.images.src}/*.*`, "!app/img/src/*.svg"])
+    .pipe(newer(paths.images.dest))
+    .pipe(avif({ quality: 50 }))
+    .pipe(src(`${paths.images.src}/*.*`))
+    .pipe(newer(paths.images.dest))
+    .pipe(webp())
+    .pipe(src(`${paths.images.src}/*.*`))
+    .pipe(newer(paths.images.dest))
+    .pipe(imagemin())
+    .pipe(dest(paths.images.dest));
+}
+
+function sprite() {
+  return src(`${paths.images.dest}/*.svg`)
+    .pipe(
+      svgSprite({
+        mode: {
+          stack: {
+            sprite: "../sprite.svg",
+            example: true,
+          },
+        },
+      })
+    )
+    .pipe(dest(paths.images.dest));
 }
 
 // Наблюдение за изменениями в файлах и выполнение соответствующих задач
@@ -47,8 +105,10 @@ function watcher() {
     },
   });
 
-  watch([paths.scss], styles); // Отслеживание SCSS-файлов
-  watch([paths.js], scripts); // Отслеживание JavaScript-файлов
+  watch([paths.styles.scss], styles); // Отслеживание SCSS-файлов
+  watch([paths.fonts.src], fonts); // Отслеживание шрифтов
+  watch([paths.images.src], images); // Отслеживание изображений
+  watch([paths.scripts.js], scripts); // Отслеживание JavaScript-файлов
   watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Отслеживание HTML-файлов
 }
 
@@ -66,8 +126,12 @@ function copyHtml() {
 function building() {
   return src(
     [
-      `${paths.cssDest}/style.min.css`,
-      `${paths.jsDest}/main.min.js`,
+      `${paths.images.dest}/*.*`,
+      `!${paths.images.dest}/*.svg`,
+      `${paths.images.dest}/sprite.svg`,
+      `${paths.fonts.dest}/*.*`,
+      `${paths.styles.dest}/style.min.css`,
+      `${paths.scripts.dest}/main.min.js`,
       `${paths.baseDir}**/*.html`,
     ],
     { base: paths.baseDir }
@@ -76,13 +140,17 @@ function building() {
 
 // Экспорт задач для выполнения из командной строки
 exports.styles = styles;
+exports.building = building;
 exports.scripts = scripts;
+exports.images = images;
+exports.sprite = sprite;
+exports.fonts = fonts;
 exports.watcher = watcher;
 exports.cleanDist = cleanDist;
 exports.copyHtml = copyHtml;
 
 // Основная задача сборки: очистка папки dist, сборка файлов, копирование HTML
-exports.build = series(cleanDist, building, copyHtml);
+exports.build = series(cleanDist, copyHtml, building);
 
 // Задача по умолчанию для разработки: компиляция ресурсов, запуск сервера, отслеживание файлов
-exports.default = parallel(styles, scripts, watcher);
+exports.default = parallel(styles, images, fonts, scripts, watcher);
