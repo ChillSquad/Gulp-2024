@@ -44,7 +44,7 @@ const paths = {
 
 // Шаблонизатор HTML PUG
 function template() {
-  return src(`${paths.pug.src}/*.pug`).pipe(pug()).pipe(dest(paths.pug.dest));
+  return src(`${paths.pug.src}/*.pug`).pipe(pug()).pipe(dest(paths.baseDir));
 }
 
 // Конвертация шрифтов в TTF, WOFF, WOFF2
@@ -117,11 +117,11 @@ function watcher() {
     },
   });
 
-  watch([paths.pug.src], template); // Отслеживаем изменения pug-файлов
   watch([paths.styles.scss], styles); // Отслеживаем изменения SCSS-файлов
   watch([paths.fonts.src], fonts); // Отслеживаем изменения шрифтов
   watch([paths.images.src], images); // Отслеживаем изменения изображений
   watch([paths.scripts.js], scripts); // Отслеживаем изменения JavaScript
+  watch([`${paths.pug.src}/*.pug`]).on("change", template); // Отслеживаем изменения pug-файлов
   watch([`${paths.baseDir}/*.html`]).on("change", browserSync.reload); // Перезагружаем браузер при изменении HTML
 }
 
@@ -145,7 +145,6 @@ function building() {
       `!${paths.images.dest}/*.svg`, // Исключаем отдельные SVG
       `${paths.images.dest}/sprite.svg`, // Добавляем SVG-спрайт
 
-      `${paths.pug.dest}/*.pug`, // Конвертированные шрифты
       `${paths.fonts.dest}/*.*`, // Конвертированные шрифты
       `${paths.styles.dest}/style.min.css`, // Минифицированный CSS
       `${paths.scripts.dest}/main.min.js`, // Минифицированный JavaScript
@@ -168,7 +167,7 @@ exports.cleanDist = cleanDist;
 exports.copyHtml = copyHtml;
 
 // Основная задача сборки
-exports.build = series(cleanDist, copyHtml, building);
+exports.build = series(cleanDist, sprite, copyHtml, building);
 
 // Задача по умолчанию для разработки
 exports.default = parallel(template, styles, images, fonts, scripts, watcher);
