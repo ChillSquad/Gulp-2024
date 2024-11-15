@@ -11,6 +11,8 @@ const webp = require("gulp-webp");
 const imagemin = require("gulp-imagemin");
 const newer = require("gulp-newer");
 const svgSprite = require("gulp-svg-sprite");
+const fonter = require("gulp-fonter");
+const ttf2woff2 = require("gulp-ttf2woff2");
 
 // Определение путей для исходных и выходных файлов
 const paths = {
@@ -29,7 +31,23 @@ const paths = {
     src: "app/img/src",
     dest: "app/img/dist",
   },
+  fonts: {
+    src: "app/fonts/src",
+    dest: "app/fonts/dist",
+  },
 };
+
+function fonts() {
+  return src(`${paths.fonts.src}/*.*`)
+    .pipe(
+      fonter({
+        formats: ["woff", "ttf"],
+      })
+    )
+    .pipe(src(`${paths.fonts.dest}/*.ttf`))
+    .pipe(ttf2woff2())
+    .pipe(dest(paths.fonts.dest));
+}
 
 // Компиляция, добавление префиксов, минификация SCSS и сохранение в выходной каталог
 function styles() {
@@ -88,6 +106,7 @@ function watcher() {
   });
 
   watch([paths.styles.scss], styles); // Отслеживание SCSS-файлов
+  watch([paths.fonts.src], fonts); // Отслеживание шрифтов
   watch([paths.images.src], images); // Отслеживание изображений
   watch([paths.scripts.js], scripts); // Отслеживание JavaScript-файлов
   watch([`${paths.baseDir}*.html`]).on("change", browserSync.reload); // Отслеживание HTML-файлов
@@ -107,8 +126,11 @@ function copyHtml() {
 function building() {
   return src(
     [
-      `${paths.styles.dest}/style.min.css`,
       `${paths.images.dest}/*.*`,
+      `!${paths.images.dest}/*.svg`,
+      `${paths.images.dest}/sprite.svg`,
+      `${paths.fonts.dest}/*.*`,
+      `${paths.styles.dest}/style.min.css`,
       `${paths.scripts.dest}/main.min.js`,
       `${paths.baseDir}**/*.html`,
     ],
@@ -118,15 +140,17 @@ function building() {
 
 // Экспорт задач для выполнения из командной строки
 exports.styles = styles;
+exports.building = building;
 exports.scripts = scripts;
 exports.images = images;
 exports.sprite = sprite;
+exports.fonts = fonts;
 exports.watcher = watcher;
 exports.cleanDist = cleanDist;
 exports.copyHtml = copyHtml;
 
 // Основная задача сборки: очистка папки dist, сборка файлов, копирование HTML
-exports.build = series(cleanDist, images, building, copyHtml);
+exports.build = series(cleanDist, copyHtml, building);
 
 // Задача по умолчанию для разработки: компиляция ресурсов, запуск сервера, отслеживание файлов
-exports.default = parallel(styles, scripts, watcher);
+exports.default = parallel(styles, images, fonts, scripts, watcher);
