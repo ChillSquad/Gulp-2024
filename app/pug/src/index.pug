@@ -7,4 +7,19 @@ html(lang="en")
     link(rel="stylesheet", href="css/style.min.css")
     script(src="js/main.min.js", defer)
   body
-      h1 Hello, World!
+    header
+      h1 My Website
+      nav
+        ul
+          li: a(href="#home") Home
+          li: a(href="#about") About
+          li: a(href="#contact") Contact
+    main
+      section#home
+        h2 Welcome to my website
+        p This is a simple example of a layout structure.
+      section#about
+        h2 About Us
+        p Some information about the website.
+    footer
+      p &copy; 2024 My Website. All rights reserved.
