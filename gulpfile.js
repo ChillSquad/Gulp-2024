@@ -1,46 +1,45 @@
 const { src, dest, watch, parallel, series } = require("gulp");
 
-const scss = require("gulp-sass")(require("sass")); // Компиляция SCSS в CSS
+const pug = require("gulp-pug"); // Шаблонизатор HTML PUG
 const concat = require("gulp-concat"); // Объединение файлов
-const uglify = require("gulp-uglify-es").default; // Минификация JS-файлов
-const browserSync = require("browser-sync").create(); // Автоперезагрузка браузера
-const autoprefixer = require("gulp-autoprefixer"); // Добавление CSS-префиксов
 const clean = require("gulp-clean"); // Удаление файлов/папок
-const avif = require("gulp-avif"); // Конвертация изображений в формат AVIF
-const webp = require("gulp-webp"); // Конвертация изображений в формат WebP
+const fs = require("fs"); // Модуль для работы с файловой системой
 const imagemin = require("gulp-imagemin"); // Оптимизация изображений
 const newer = require("gulp-newer"); // Обработка только новых файлов
 const svgSprite = require("gulp-svg-sprite"); // Создание SVG-спрайтов
+const avif = require("gulp-avif"); // Конвертация изображений в формат AVIF
+const webp = require("gulp-webp"); // Конвертация изображений в формат WebP
+const uglify = require("gulp-uglify-es").default; // Минификация JS-файлов
+const scss = require("gulp-sass")(require("sass")); // Компиляция SCSS в CSS
+const autoprefixer = require("gulp-autoprefixer"); // Добавление CSS-префиксов
 const fonter = require("gulp-fonter"); // Конвертация шрифтов в разные форматы
 const ttf2woff2 = require("gulp-ttf2woff2"); // Конвертация шрифтов TTF в WOFF2
-const pug = require("gulp-pug"); // Шаблонизатор HTML PUG
-const gulpIf = require("gulp-if"); // Для условной обработки
-const fs = require("fs"); // Модуль для работы с файловой системой
+const browserSync = require("browser-sync").create(); // Автоперезагрузка браузера
 
 // Определение путей для исходных и выходных файлов
 const paths = {
-  baseDir: "app", // Базовая директория проекта
-  dist: "dist", // Папка для итоговой сборки
-  html: "app/*.html", // Путь к основному HTML-файлу
+  baseDir: "app",
+  dist: "dist",
+  html: "app/*.html",
   pug: {
     src: "app/pug/src",
     dest: "app/pug/dist",
   },
   styles: {
-    scss: "app/scss/style.scss", // Основной SCSS-файл
-    dest: "app/css", // Папка для скомпилированных CSS
+    scss: "app/scss/style.scss",
+    dest: "app/css",
   },
   scripts: {
-    js: "app/js/main.js", // Основной JavaScript-файл
-    dest: "app/js", // Папка для минифицированных JS-файлов
+    js: "app/js/main.js",
+    dest: "app/js",
   },
   images: {
-    src: "app/img/src", // Исходные изображения
-    dest: "app/img/dist", // Папка для оптимизированных изображений
+    src: "app/img/src",
+    dest: "app/img/dist",
   },
   fonts: {
-    src: "app/fonts/src", // Исходные шрифты
-    dest: "app/fonts/dist", // Папка для сконвертированных шрифтов
+    src: "app/fonts/src",
+    dest: "app/fonts/dist",
   },
 };
 
@@ -159,16 +158,16 @@ function building() {
 }
 
 // Экспортируем задачи для командной строки
-exports.template = template;
-exports.styles = styles;
-exports.building = building;
-exports.scripts = scripts;
+exports.fonts = fonts;
 exports.images = images;
 exports.sprite = sprite;
-exports.fonts = fonts;
+exports.styles = styles;
 exports.watcher = watcher;
-exports.cleanDist = cleanDist;
+exports.scripts = scripts;
+exports.template = template;
 exports.copyHtml = copyHtml;
+exports.building = building;
+exports.cleanDist = cleanDist;
 
 // Основная задача сборки
 exports.build = series(cleanDist, sprite, copyHtml, building);
