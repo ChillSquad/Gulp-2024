@@ -5,12 +5,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Andrey Tyukachev",
   "license": "ISC",
-  "description": "",
+  "description": "Gulp-сборка для разработки и сборки проектов с поддержкой SCSS, PUG, оптимизации изображений, работы с шрифтами и автоматического обновления браузера.",
+  "repository": "https://github.com/ChillSquad/Gulp-2024",
   "devDependencies": {
     "browser-sync": "^3.0.2",
     "gulp": "^4.0.2",
+    "gulp-autoprefixer": "^8.0.0",
     "gulp-avif": "^1.1.1",
     "gulp-clean": "^0.4.0",
     "gulp-concat": "^2.6.1",
@@ -25,8 +27,5 @@
     "gulp-uglify-es": "^3.0.0",
     "gulp-webp": "^4.0.1",
     "sass": "^1.77.4"
-  },
-  "dependencies": {
-    "gulp-autoprefixer": "^8.0.0"
   }
 }
